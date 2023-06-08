@@ -54,3 +54,4 @@ if __name__ == '__main__':
 
 	my_coin.add_block([transaction1, transaction2])
 	print(my_coin.get_latest_block().transactions)
+	print(1)
