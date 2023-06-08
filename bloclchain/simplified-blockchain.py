@@ -1,57 +1,94 @@
 import hashlib
-import time
 from datetime import datetime
 import json
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
+import binascii
+from typing import List
 
 
 class Transaction:
-	def __init__(self, sender, receiver, amount):
-		self.sender = sender
-		self.receiver = receiver
-		self.amount = amount
+    def __init__(self, sender, receiver, amount, signature=None):
+        self.sender = sender
+        self.receiver = receiver
+        self.amount = amount
+        self.signature = signature
+
+    def to_dict(self):
+        return {
+            'sender': self.sender,
+            'receiver': self.receiver,
+            'amount': self.amount,
+            'signature': self.signature
+        }
 
 
 class Block:
-	def __init__(self, transactions, time, previous_hash=''):
-		self.transactions = transactions
-		self.time = time
-		self.previous_hash = previous_hash
-		self.hash = self.calculate_hash()
+    def __init__(self, transactions: List[Transaction], time, previous_hash=''):
+        self.transactions = transactions
+        self.time = time
+        self.previous_hash = previous_hash
+        self.nonce = 0
+        self.hash = self.calculate_hash()
 
-	def calculate_hash(self):
-		hash_transactions = ""
-		for transaction in self.transactions:
-			hash_transactions += transaction.sender + transaction.receiver + str(transaction.amount)
+    def calculate_hash(self):
+        hash_transactions = ""
+        for transaction in self.transactions:
+            hash_transactions += transaction.sender + transaction.receiver + str(transaction.amount)
 
-		hash_string = str(self.time) + hash_transactions + self.previous_hash
-		hash_encoded = json.dumps(hash_string, sort_keys=True).encode()
-		return hashlib.sha256(hash_encoded).hexdigest()
+        hash_string = str(self.time) + hash_transactions + self.previous_hash + str(self.nonce)
+        hash_encoded = json.dumps(hash_string, sort_keys=True).encode()
+        return hashlib.sha256(hash_encoded).hexdigest()
+
+    def mine_block(self, difficulty):
+        while self.hash[:difficulty] != "0" * difficulty:
+            self.nonce += 1
+            self.hash = self.calculate_hash()
 
 
 class Blockchain:
-	def __init__(self):
-		self.chain = [self.create_genesis_block()]
+    def __init__(self, difficulty):
+        self.difficulty = difficulty
+        self.chain = [self.create_genesis_block()]
 
-	def create_genesis_block(self):
-		transactions = [Transaction("Genesis sender", "Genesis receiver", 0)]
-		time = datetime.now()
-		return Block(transactions, time, "0")
+    def create_genesis_block(self):
+        transactions = [Transaction("Genesis sender", "Genesis receiver", 0, "")]
+        time = datetime.now()
+        return Block(transactions, time, "0")
 
-	def get_latest_block(self):
-		return self.chain[-1]
+    def get_latest_block(self):
+        return self.chain[-1]
 
-	def add_block(self, transactions):
-		time = datetime.now()
-		new_block = Block(transactions, time, self.get_latest_block().hash)
-		self.chain.append(new_block)
+    def add_block(self, transactions):
+        time = datetime.now()
+        new_block = Block(transactions, time, self.get_latest_block().hash)
+        new_block.mine_block(self.difficulty)
+        self.chain.append(new_block)
+
+
+class Wallet:
+    def __init__(self):
+        key_pair = RSA.generate(2048)
+        self.private_key = key_pair.export_key()
+        self.public_key = key_pair.publickey().export_key()
+
+    def sign_transaction(self, transaction):
+        priv_key_obj = RSA.import_key(self.private_key)
+        message = SHA256.new(str(transaction.to_dict()).encode('utf8'))
+        signature = pkcs1_15.new(priv_key_obj).sign(message)
+        return binascii.hexlify(signature).decode('ascii')
 
 
 if __name__ == '__main__':
-	my_coin = Blockchain()
+    alice_wallet = Wallet()
+    bob_wallet = Wallet()
+    transaction = Transaction(alice_wallet.public_key, bob_wallet.public_key, 50)
+    signature = alice_wallet.sign_transaction(transaction)
+    transaction.signature = signature
 
-	transaction1 = Transaction("Alice", "Bob", 50)
-	transaction2 = Transaction("Bob", "Alice", 25)
+    my_coin = Blockchain(1)
+    my_coin.add_block([transaction])
 
-	my_coin.add_block([transaction1, transaction2])
-	print(my_coin.get_latest_block().transactions)
-	print(1)
+    print(my_coin.get_latest_block().transactions)
+
