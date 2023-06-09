@@ -35,7 +35,7 @@ class Block:
     def calculate_hash(self):
         hash_transactions = ""
         for transaction in self.transactions:
-            hash_transactions += transaction.sender + transaction.receiver + str(transaction.amount)
+            hash_transactions += str(transaction.sender) + str(transaction.receiver) + str(transaction.amount)
 
         hash_string = str(self.time) + hash_transactions + self.previous_hash + str(self.nonce)
         hash_encoded = json.dumps(hash_string, sort_keys=True).encode()
@@ -51,6 +51,8 @@ class Blockchain:
     def __init__(self, difficulty):
         self.difficulty = difficulty
         self.chain = [self.create_genesis_block()]
+        self.pending_transactions = []
+        self.reward = 100
 
     def create_genesis_block(self):
         transactions = [Transaction("Genesis sender", "Genesis receiver", 0, "")]
@@ -60,11 +62,15 @@ class Blockchain:
     def get_latest_block(self):
         return self.chain[-1]
 
-    def add_block(self, transactions):
+    def add_transactions(self, transactions: List[Transaction]):
+        self.pending_transactions.extend(transactions)
+
+    def add_block(self, miner_address):
         time = datetime.now()
-        new_block = Block(transactions, time, self.get_latest_block().hash)
+        new_block = Block(self.pending_transactions, time, self.get_latest_block().hash)
         new_block.mine_block(self.difficulty)
         self.chain.append(new_block)
+        self.pending_transactions = [Transaction(None, miner_address, self.reward, "")]
 
 
 class Wallet:
@@ -87,8 +93,10 @@ if __name__ == '__main__':
     signature = alice_wallet.sign_transaction(transaction)
     transaction.signature = signature
 
-    my_coin = Blockchain(1)
-    my_coin.add_block([transaction])
+    chain = Blockchain(1)
+    chain.add_transactions([transaction])
+    # Alice is also the miner
+    chain.add_block(alice_wallet.public_key)
 
-    print(my_coin.get_latest_block().transactions)
-
+    for txn in chain.get_latest_block().transactions:
+        print(txn.to_dict())
