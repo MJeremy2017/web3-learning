@@ -93,7 +93,7 @@ if __name__ == '__main__':
     signature = alice_wallet.sign_transaction(transaction)
     transaction.signature = signature
 
-    chain = Blockchain(1)
+    chain = Blockchain(2)
     chain.add_transactions([transaction])
     # Alice is also the miner
     chain.add_block(alice_wallet.public_key)
