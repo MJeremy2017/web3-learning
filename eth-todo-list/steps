@@ -1,0 +1,6 @@
+- truffle and ganache(UI) installation
+- project structure
+- write a contract
+- truffle-configs
+- deploy/migrate a contract
+- interact with deployed contracts
