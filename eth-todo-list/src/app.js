@@ -9,6 +9,7 @@ App = {
   // https://medium.com/metamask/https-medium-com-metamask-breaking-change-injecting-web3-7722797916a8
   loadWeb3: async () => {
     if (typeof web3 !== 'undefined') {
+      // if web3 is defined, in this case, it injects a web3 variable by Metamask
       App.web3Provider = web3.currentProvider
       web3 = new Web3(web3.currentProvider)
     } else {
