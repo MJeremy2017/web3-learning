@@ -13,3 +13,8 @@ Frontend
 - index.html (starting point for the browser and load package dependencies to the browser)
 - app.js (create web3 instance using Metamask)
 -
+
+
+
+Sources:
+- [pet shop example](https://trufflesuite.com/guides/pet-shop/#creating-a-user-interface-to-interact-with-the-smart-contract)
