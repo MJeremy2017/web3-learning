@@ -4,7 +4,7 @@ App = {
 
     load: async () => {
         await App.loadWeb3()
-        await App.loadAccount()
+        await Promise.all([App.loadAccount(), App.loadContract()])
     },
 
     // https://medium.com/metamask/https-medium-com-metamask-breaking-change-injecting-web3-7722797916a8
@@ -36,6 +36,16 @@ App = {
         let accounts = await web3.eth.getAccounts()
         App.account = accounts[0]
         console.log(App.account)
+    },
+
+    loadContract: async () => {
+        const todoList = await $.getJSON("TodoList.json")
+        // contract instance
+        App.contracts.todoList = TruffleContract(todoList)
+        App.contracts.todoList.setProvider(web3.currentProvider)
+
+        App.todoList = await App.contracts.todoList.deployed()
+        console.log(todoList)
     }
 }
 
