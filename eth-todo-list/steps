@@ -9,3 +9,7 @@ Project setup
 Backend/List Tasks
 - write contracts
 
+Frontend
+- index.html (starting point for the browser and load package dependencies to the browser)
+- app.js (create web3 instance using Metamask)
+-
