@@ -46,11 +46,24 @@ App = {
         App.contracts.todoList.setProvider(web3.currentProvider)
 
         App.todoList = await App.contracts.todoList.deployed()
-        console.log(todoList)
     },
 
     render: async () => {
+        App.setLoading(true)
         $('#account').html(App.account)
+        App.setLoading(false)
+    },
+
+    setLoading: (isLoading) => {
+        const loader = $('#loader')
+        const content = $('#content')
+        if (isLoading) {
+            loader.show()
+            content.hide()
+        } else {
+            loader.hide()
+            content.show()
+        }
     }
 }
 
