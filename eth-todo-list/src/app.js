@@ -48,9 +48,40 @@ App = {
         App.todoList = await App.contracts.todoList.deployed()
     },
 
+    renderTasks: async () => {
+        const nonCompletedTaskList = $('#taskList')
+        const completedTaskList = $('#completedTaskList')
+        const taskTemplate = $(".taskTemplate")
+        const TaskCount = await App.todoList.taskCount()
+
+        for (let i = 0; i < TaskCount; i++) {
+            let newTaskTemplate = taskTemplate.clone()
+            let task = await App.todoList.tasks(i)
+            let taskId = task.id.toNumber()
+            let content = task.content
+            let done = task.done
+
+            newTaskTemplate.find(".content").html(content)
+            newTaskTemplate.find("input")
+                .prop("name", taskId)
+                .prop("checked", done)
+
+            if (done) {
+                completedTaskList.append(newTaskTemplate)
+            } else {
+                nonCompletedTaskList.append(newTaskTemplate)
+            }
+            newTaskTemplate.show()
+        }
+
+    },
+
     render: async () => {
         App.setLoading(true)
+
         $('#account').html(App.account)
+        await App.renderTasks()
+
         App.setLoading(false)
     },
 
