@@ -36,6 +36,7 @@ App = {
     loadAccount: async () => {
         let accounts = await web3.eth.getAccounts()
         App.account = accounts[0]
+        web3.eth.defaultAccount = accounts[0]
         console.log(App.account)
     },
 
@@ -46,6 +47,14 @@ App = {
         App.contracts.todoList.setProvider(web3.currentProvider)
 
         App.todoList = await App.contracts.todoList.deployed()
+    },
+
+    createTask: async () => {
+        App.setLoading(true)
+
+        const content = $("#newTask").val()
+        await App.todoList.createTask(content, {from: web3.eth.defaultAccount})
+        window.location.reload()
     },
 
     renderTasks: async () => {
