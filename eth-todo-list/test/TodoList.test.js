@@ -18,7 +18,10 @@ contract("TodoList", (accounts) => {
     it("can add tasks", async () => {
         let content = "hello world"
         const c = await todoListContract.deployed()
-        await c.createTask(content)
+        const result = await c.createTask(content)
+        // where we can check event logs
+        const event = result.logs[0].args
+        console.log(event)
 
         const taskCount = await c.taskCount()
         const task = await c.tasks(1)
