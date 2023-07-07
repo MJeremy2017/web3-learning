@@ -30,4 +30,13 @@ contract("TodoList", (accounts) => {
         assert.strictEqual(task.content, content)
         assert.strictEqual(task.done, false)
     })
+
+    it("can toggle tasks", async () => {
+        const c = await todoListContract.deployed()
+        await c.toggleCompleted(0)
+
+        const task = await c.tasks(0)
+        assert.strictEqual(task.id.toNumber(), 0)
+        assert.strictEqual(task.done, true)
+    })
 })

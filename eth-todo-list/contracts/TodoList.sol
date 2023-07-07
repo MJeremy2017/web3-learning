@@ -23,4 +23,10 @@ contract TodoList {
         taskCount++;
     }
 
+    function toggleCompleted(uint id) public {
+        Task memory _task = tasks[id];
+        _task.done = !_task.done;
+        tasks[id] = _task;
+    }
+
 }

@@ -12,12 +12,13 @@ Backend/List Tasks
 Frontend
 - index.html (starting point for the browser and load package dependencies to the browser)
 - app.js (create web3 instance using Metamask)
-- load contract: TruffleContract("contract.json") and interact with frontend
+- load contract: TruffleContract("contract.json")
+- Frontend components interacts with the loaded contract
 
 
 Test
 - write test for contract: https://trufflesuite.com/docs/truffle/how-to/debug-test/write-tests-in-javascript/
 
 
-Sources:
+Examples:
 - [pet shop example](https://trufflesuite.com/guides/pet-shop/#creating-a-user-interface-to-interact-with-the-smart-contract)
