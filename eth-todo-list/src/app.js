@@ -74,6 +74,7 @@ App = {
             newTaskTemplate.find("input")
                 .prop("name", taskId)
                 .prop("checked", done)
+                .on("click", App.toggleTask)
 
             if (done) {
                 completedTaskList.append(newTaskTemplate)
@@ -83,6 +84,13 @@ App = {
             newTaskTemplate.show()
         }
 
+    },
+
+    toggleTask: async (e) => {
+        App.setLoading(true)
+        let taskId = e.target.name
+        await App.todoList.toggleCompleted(taskId, {from: web3.eth.defaultAccount})
+        window.location.reload()
     },
 
     render: async () => {
