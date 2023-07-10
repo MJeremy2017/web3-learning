@@ -1,6 +1,6 @@
 const todoListContract = artifacts.require("TodoList");
 
-contract("TodoList", (accounts) => {
+contract("TodoList", () => {
     it("contract should deployed", async () => {
         const c = await todoListContract.deployed()
         assert.notEqual(c.address, 0x0)
