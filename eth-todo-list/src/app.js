@@ -14,9 +14,7 @@ App = {
               window.web3 = new Web3(ethereum)
               try {
                 // Request account access if needed
-                await ethereum.enable()
-                // Accounts now exposed
-                // web3.eth.sendTransaction({/* ... */})
+                await ethereum.enable()  // this can return accounts
               } catch (error) {
                 window.alert("User denied account access...")
               }
