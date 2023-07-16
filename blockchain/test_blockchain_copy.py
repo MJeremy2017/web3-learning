@@ -1,6 +1,7 @@
 import hashlib
 import random
 from unittest import TestCase
+from typing import List
 from blockchain.blockchain_copy import Block, Transaction, Wallet
 import secrets
 from blockchain.utils import verify
@@ -10,20 +11,21 @@ def generate_random_hash():
     return secrets.token_hex(20)
 
 
-def generate_random_key_pair():
-    pass
-
-
-def generate_random_transactions(num: int):
+def generate_random_transactions(n_users: int, n_txn: int):
+    wallets: List[Wallet] = []
+    for _ in range(n_users):
+        w = Wallet()
+        wallets.append(w)
     results = []
-    for i in range(num):
-        generate_random_key_pair()
-        txn = Transaction(
-            from_addr="",
-            to_addr="",
-            amount=random.randint(1, 10000),
-            signature=""
-        )
+    for i in range(n_txn):
+        i = j = 0
+        while i != j:
+            i, j = random.randint(0, n_users - 1), random.randint(0, n_users - 1)
+        fr = wallets[i]
+        to = wallets[j]
+        signed_txn = generate_random_signed_transaction(fr, to)
+        results.append(signed_txn)
+    return results
 
 
 def generate_random_signed_transaction(wa: Wallet, wb: Wallet):
@@ -53,12 +55,9 @@ class TestWallet(TestCase):
         self.assertEqual(got, False)
 
 
-
-
-
 class TestBlock(TestCase):
     prev_hash = generate_random_hash()
-    txns = generate_random_transactions(5)
+    txns = generate_random_transactions(3, 10)
     reward = 10
     difficulty = 1
 
@@ -69,6 +68,11 @@ class TestBlock(TestCase):
             reward=self.reward,
             difficulty=self.difficulty
         )
+        self.miner = Wallet()
 
     def test_mine(self):
-        self.fail()
+        self.block.mine(
+            miner_addr=self.miner.public_key_str
+        )
+
+        self.assertEqual(self.block.block_hash[:self.difficulty], "0" * self.difficulty)
