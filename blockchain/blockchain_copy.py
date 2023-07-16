@@ -5,7 +5,9 @@ from dataclasses import dataclass
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.exceptions import InvalidSignature
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -82,7 +84,7 @@ class Block:
             )
             if self._valid_block_hash(block_hash):
                 time_cost = time.time() - start_time
-                logging.info(f"Block mined time cost {time_cost}")
+                logging.info(f"Block hash {self.block_hash}, mined time cost {time_cost}")
                 self.block_hash = block_hash
                 break
             else:

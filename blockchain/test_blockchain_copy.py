@@ -2,9 +2,9 @@ import hashlib
 import random
 from unittest import TestCase
 from typing import List
-from blockchain.blockchain_copy import Block, Transaction, Wallet
+from blockchain_copy import Block, Transaction, Wallet
 import secrets
-from blockchain.utils import verify
+from utils import verify
 
 
 def generate_random_hash():
@@ -57,7 +57,7 @@ class TestWallet(TestCase):
 
 class TestBlock(TestCase):
     prev_hash = generate_random_hash()
-    txns = generate_random_transactions(3, 10)
+    txns = generate_random_transactions(n_users=3, n_txn=10)
     reward = 10
     difficulty = 1
 
