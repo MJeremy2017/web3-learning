@@ -4,36 +4,28 @@ from typing import List
 from dataclasses import dataclass
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
+from utils import verify
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class Transaction:
-    from_addr: str
-    to_addr: str
-    amount: int
-    signature: str = ""
+class PrivateKey:
+    def __init__(self, key: RSAPrivateKey):
+        self._private_key = key
 
     def __str__(self):
-        return self.from_addr + self.to_addr + str(self.amount) + self.signature
-
-    def encode(self):
-        return (self.from_addr + self.to_addr + str(self.amount)).encode('utf-8')
-
-
-class Wallet:
-    def __init__(self):
-        self.private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048
+        key_bytes = self._private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
         )
-        self.public_key = self.private_key.public_key()
+        return key_bytes.decode('utf-8')
 
-    def sign(self, transaction: Transaction) -> Transaction:
-        sig: bytes = self.private_key.sign(
+    def sign(self, transaction: 'Transaction') -> 'Transaction':
+        sig: bytes = self._private_key.sign(
             transaction.encode(),
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),
@@ -44,22 +36,48 @@ class Wallet:
         transaction.signature = sig.hex()
         return transaction
 
-    @property
-    def private_key_str(self) -> str:
-        key_bytes = self.private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
-        )
-        return key_bytes.decode('utf-8')
 
-    @property
-    def public_key_str(self) -> str:
-        key_bytes = self.public_key.public_bytes(
+class PublicKey:
+    def __init__(self, key: RSAPublicKey):
+        self._public_key = key
+
+    def __str__(self):
+        key_bytes = self._public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
         return key_bytes.decode('utf-8')
+
+
+@dataclass
+class Transaction:
+    from_addr: PublicKey
+    to_addr: PrivateKey
+    amount: int
+    signature: bytes = ''
+
+    def __str__(self):
+        return str(self.from_addr) + str(self.to_addr) + str(self.amount) + self.signature.hex()
+
+    def encode(self):
+        return (str(self.from_addr) + str(self.to_addr) + str(self.amount)).encode('utf-8')
+
+
+def generate_key_pair():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
+    public_key = private_key.public_key()
+    return PrivateKey(private_key), PublicKey(public_key)
+
+
+class Wallet:
+    def __init__(self):
+        self.private_key, self.public_key = generate_key_pair()
+
+    def sign(self, transaction: Transaction) -> Transaction:
+        return self.private_key.sign(transaction)
 
 
 class Block:
@@ -84,8 +102,8 @@ class Block:
             )
             if self._valid_block_hash(block_hash):
                 time_cost = time.time() - start_time
-                logging.info(f"Block hash {self.block_hash}, mined time cost {time_cost}")
                 self.block_hash = block_hash
+                logging.info(f"Block hash {self.block_hash}, mined time cost {time_cost}")
                 break
             else:
                 self.nonce += 1
@@ -114,4 +132,9 @@ class Block:
         return block_hash[:self.difficulty] == "0" * self.difficulty
 
     def verify_transactions(self, transactions: List[Transaction]):
-        pass
+        for txn in transactions:
+            self._verify_signature(txn)
+
+    def _verify_signature(self, txn: Transaction):
+        public_key = txn.from_addr
+        verify()

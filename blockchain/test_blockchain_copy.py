@@ -59,7 +59,7 @@ class TestBlock(TestCase):
     prev_hash = generate_random_hash()
     txns = generate_random_transactions(n_users=3, n_txn=10)
     reward = 10
-    difficulty = 1
+    difficulty = 2
 
     def setUp(self) -> None:
         self.block = Block(
