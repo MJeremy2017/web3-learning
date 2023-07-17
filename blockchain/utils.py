@@ -1,14 +1,13 @@
-from blockchain_copy import Transaction
+import blockchain_copy as bk
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 
 
-def verify(public_key: RSAPublicKey, transaction: Transaction) -> bool:
+def verify(public_key: bk.PublicKey, transaction: bk.Transaction) -> bool:
     try:
-        public_key.verify(
-            signature=bytes.fromhex(transaction.signature),
+        public_key.public_key.verify(
+            signature=transaction.signature,
             data=transaction.encode(),
             padding=padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),

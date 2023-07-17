@@ -2,9 +2,8 @@ import hashlib
 import random
 from unittest import TestCase
 from typing import List
-from blockchain_copy import Block, Transaction, Wallet
+from blockchain_copy import Block, Transaction, Wallet, verify
 import secrets
-from utils import verify
 
 
 def generate_random_hash():
@@ -30,8 +29,8 @@ def generate_random_transactions(n_users: int, n_txn: int):
 
 def generate_random_signed_transaction(wa: Wallet, wb: Wallet):
     unsigned_txn = Transaction(
-        from_addr=wa.public_key_str,
-        to_addr=wb.public_key_str,
+        from_addr=wa.public_key,
+        to_addr=wb.public_key,
         amount=random.randint(1, 10000),
     )
     signed_txn = wa.sign(unsigned_txn)
@@ -50,7 +49,7 @@ class TestWallet(TestCase):
 
     def test_verify_illegal_transaction(self):
         txn = generate_random_signed_transaction(self.wallet_a, self.wallet_b)
-        txn.signature = hashlib.sha256("abc".encode()).hexdigest()
+        txn.signature = b'123'
         got = verify(self.wallet_a.public_key, txn)
         self.assertEqual(got, False)
 
@@ -72,7 +71,7 @@ class TestBlock(TestCase):
 
     def test_mine(self):
         self.block.mine(
-            miner_addr=self.miner.public_key_str
+            miner_addr=self.miner.public_key
         )
 
         self.assertEqual(self.block.block_hash[:self.difficulty], "0" * self.difficulty)

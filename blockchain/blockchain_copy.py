@@ -1,3 +1,5 @@
+from __future__ import annotations
+from cryptography.exceptions import InvalidSignature
 import logging
 import time
 from typing import List
@@ -6,7 +8,6 @@ import hashlib
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
-from utils import verify
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class PrivateKey:
         )
         return key_bytes.decode('utf-8')
 
-    def sign(self, transaction: 'Transaction') -> 'Transaction':
+    def sign(self, transaction: Transaction) -> Transaction:
         sig: bytes = self._private_key.sign(
             transaction.encode(),
             padding.PSS(
@@ -33,7 +34,7 @@ class PrivateKey:
             ),
             hashes.SHA256()
         )
-        transaction.signature = sig.hex()
+        transaction.signature = sig
         return transaction
 
 
@@ -48,13 +49,25 @@ class PublicKey:
         )
         return key_bytes.decode('utf-8')
 
+    @property
+    def public_key(self):
+        return self._public_key
+
+
+class GenesisPublicKey(PublicKey):
+    def __init__(self, key: RSAPublicKey):
+        super().__init__(key)
+
+    def __str__(self):
+        return ""
+
 
 @dataclass
 class Transaction:
     from_addr: PublicKey
-    to_addr: PrivateKey
+    to_addr: PublicKey
     amount: int
-    signature: bytes = ''
+    signature: bytes = b''
 
     def __str__(self):
         return str(self.from_addr) + str(self.to_addr) + str(self.amount) + self.signature.hex()
@@ -89,7 +102,7 @@ class Block:
         self.nonce = 0
         self.block_hash = ""
 
-    def mine(self, miner_addr: str):
+    def mine(self, miner_addr: PublicKey):
         start_time = time.time()
         coinbase_transaction = self._generate_coinbase_transaction(self.reward, miner_addr)
         self.verify_transactions(self.transactions)
@@ -108,10 +121,10 @@ class Block:
             else:
                 self.nonce += 1
 
-    def _generate_coinbase_transaction(self, reward: int, miner_addr: str) -> Transaction:
+    def _generate_coinbase_transaction(self, reward: int, miner_addr: PublicKey) -> Transaction:
         # coinbase transaction does not need a signature
         return Transaction(
-            from_addr="",
+            from_addr=GenesisPublicKey(None),
             to_addr=miner_addr,
             amount=reward,
         )
@@ -137,4 +150,21 @@ class Block:
 
     def _verify_signature(self, txn: Transaction):
         public_key = txn.from_addr
-        verify()
+        # verify()
+        return True
+
+
+def verify(public_key: PublicKey, transaction: Transaction) -> bool:
+    try:
+        public_key.public_key.verify(
+            signature=transaction.signature,
+            data=transaction.encode(),
+            padding=padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            algorithm=hashes.SHA256()
+        )
+        return True
+    except InvalidSignature:
+        return False
