@@ -1,9 +1,9 @@
-import hashlib
 import random
 from unittest import TestCase
 from typing import List
 from blockchain_copy import Block, Transaction, Wallet, verify
 import secrets
+from exceptions import InvalidSignatureException
 
 
 def generate_random_hash():
@@ -61,8 +61,14 @@ class TestBlock(TestCase):
     difficulty = 2
 
     def setUp(self) -> None:
+        prev_block = Block(
+            prev_block=None,
+            transactions=[],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
         self.block = Block(
-            prev_hash=self.prev_hash,
+            prev_block=prev_block,
             transactions=self.txns,
             reward=self.reward,
             difficulty=self.difficulty
@@ -75,3 +81,17 @@ class TestBlock(TestCase):
         )
 
         self.assertEqual(self.block.block_hash[:self.difficulty], "0" * self.difficulty)
+
+    def test_verify_signed_transaction(self):
+        wa = Wallet()
+        wb = Wallet()
+        signed_txn = generate_random_signed_transaction(wa, wb)
+        self.block.verify_single_transaction(signed_txn)
+
+    def test_verify_false_signed_transaction(self):
+        wa = Wallet()
+        wb = Wallet()
+        txn = generate_random_signed_transaction(wa, wb)
+        txn.signature = b'123'
+        with self.assertRaises(InvalidSignatureException):
+            self.block.verify_single_transaction(txn)

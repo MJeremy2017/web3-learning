@@ -1,13 +1,15 @@
 from __future__ import annotations
+
 from cryptography.exceptions import InvalidSignature
 import logging
 import time
-from typing import List
+from typing import List, Union
 from dataclasses import dataclass
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
+from exceptions import InvalidSignatureException
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -94,13 +96,13 @@ class Wallet:
 
 
 class Block:
-    def __init__(self, prev_hash: str, transactions: List[Transaction], reward: int, difficulty: int):
-        self.prev_hash = prev_hash
+    def __init__(self, prev_block: Union[Block, None], transactions: List[Transaction], reward: int, difficulty: int):
+        self.prev_block = prev_block
         self.transactions = transactions
         self.reward = reward
         self.difficulty = difficulty
         self.nonce = 0
-        self.block_hash = ""
+        self.block_hash = "0x0"
 
     def mine(self, miner_addr: PublicKey):
         start_time = time.time()
@@ -108,7 +110,7 @@ class Block:
         self.verify_transactions(self.transactions)
         while 1:
             block_hash = self._hash(
-                self.prev_hash,
+                self.prev_block.block_hash,
                 self.transactions,
                 coinbase_transaction,
                 self.nonce
@@ -146,12 +148,24 @@ class Block:
 
     def verify_transactions(self, transactions: List[Transaction]):
         for txn in transactions:
-            self._verify_signature(txn)
+            self.verify_single_transaction(txn)
+
+    def verify_single_transaction(self, txn: Transaction):
+        self._verify_signature(txn)
+        self._verify_sufficient_funds(txn)
+        self._verify_correct_reward()
 
     def _verify_signature(self, txn: Transaction):
-        public_key = txn.from_addr
-        # verify()
-        return True
+        public_key: PublicKey = txn.from_addr
+        is_valid_txn = verify(public_key, txn)
+        if not is_valid_txn:
+            raise InvalidSignatureException(f"Invalid transaction {txn}")
+
+    def _verify_sufficient_funds(self, txn: Transaction):
+        pass
+
+    def _verify_correct_reward(self):
+        pass
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
