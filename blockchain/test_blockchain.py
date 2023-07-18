@@ -1,7 +1,7 @@
 import random
 from unittest import TestCase
 from typing import List
-from blockchain_copy import Block, Transaction, Wallet, verify
+from blockchain import Block, Transaction, Wallet, verify
 import secrets
 from exceptions import InvalidSignatureException
 
