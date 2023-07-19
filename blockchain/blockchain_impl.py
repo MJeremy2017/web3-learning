@@ -9,7 +9,7 @@ import hashlib
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
-from exceptions import InvalidSignatureException
+from exceptions import *
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -151,20 +151,32 @@ class Block:
             self.verify_single_transaction(txn)
 
     def verify_single_transaction(self, txn: Transaction):
-        self._verify_signature(txn)
-        self._verify_sufficient_funds(txn)
-        self._verify_correct_reward()
+        self.verify_signature(txn)
+        self.verify_sufficient_funds(txn)
+        self.verify_correct_reward()
 
-    def _verify_signature(self, txn: Transaction):
+    def verify_signature(self, txn: Transaction):
         public_key: PublicKey = txn.from_addr
         is_valid_txn = verify(public_key, txn)
         if not is_valid_txn:
             raise InvalidSignatureException(f"Invalid transaction {txn}")
 
-    def _verify_sufficient_funds(self, txn: Transaction):
-        pass
+    def verify_sufficient_funds(self, txn: Transaction):
+        from_addr = txn.from_addr
+        amount = txn.amount
+        balance = 0
+        node: Block = self.prev_block
+        while node:
+            for txn in node.transactions:
+                if txn.from_addr == from_addr:
+                    balance -= txn.amount
+                if txn.to_addr == from_addr:
+                    balance += txn.amount
+            node = node.prev_block
+        if balance < amount:
+            raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
-    def _verify_correct_reward(self):
+    def verify_correct_reward(self):
         pass
 
 

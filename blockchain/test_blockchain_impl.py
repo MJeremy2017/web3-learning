@@ -1,9 +1,9 @@
 import random
 from unittest import TestCase
 from typing import List
-from blockchain import Block, Transaction, Wallet, verify
+from blockchain_impl import Block, Transaction, Wallet, verify
 import secrets
-from exceptions import InvalidSignatureException
+from exceptions import *
 
 
 def generate_random_hash():
@@ -22,16 +22,16 @@ def generate_random_transactions(n_users: int, n_txn: int):
             i, j = random.randint(0, n_users - 1), random.randint(0, n_users - 1)
         fr = wallets[i]
         to = wallets[j]
-        signed_txn = generate_random_signed_transaction(fr, to)
+        signed_txn = generate_signed_transaction(fr, to)
         results.append(signed_txn)
     return results
 
 
-def generate_random_signed_transaction(wa: Wallet, wb: Wallet):
+def generate_signed_transaction(wa: Wallet, wb: Wallet, amount: int = 0):
     unsigned_txn = Transaction(
         from_addr=wa.public_key,
         to_addr=wb.public_key,
-        amount=random.randint(1, 10000),
+        amount=random.randint(1, 10000) if amount == 0 else amount,
     )
     signed_txn = wa.sign(unsigned_txn)
     return signed_txn
@@ -43,12 +43,12 @@ class TestWallet(TestCase):
         self.wallet_b = Wallet()
 
     def test_verify_legit_transaction(self):
-        txn = generate_random_signed_transaction(self.wallet_a, self.wallet_b)
+        txn = generate_signed_transaction(self.wallet_a, self.wallet_b)
         got = verify(self.wallet_a.public_key, txn)
         self.assertEqual(got, True)
 
     def test_verify_illegal_transaction(self):
-        txn = generate_random_signed_transaction(self.wallet_a, self.wallet_b)
+        txn = generate_signed_transaction(self.wallet_a, self.wallet_b)
         txn.signature = b'123'
         got = verify(self.wallet_a.public_key, txn)
         self.assertEqual(got, False)
@@ -56,20 +56,26 @@ class TestWallet(TestCase):
 
 class TestBlock(TestCase):
     prev_hash = generate_random_hash()
-    txns = generate_random_transactions(n_users=3, n_txn=10)
+    wa = Wallet()
+    wb = Wallet()
+    wc = Wallet()
     reward = 10
     difficulty = 2
 
     def setUp(self) -> None:
         prev_block = Block(
             prev_block=None,
-            transactions=[],
+            transactions=[
+                generate_signed_transaction(self.wc, self.wa, 100)
+            ],
             reward=self.reward,
             difficulty=self.difficulty
         )
         self.block = Block(
             prev_block=prev_block,
-            transactions=self.txns,
+            transactions=[
+                generate_signed_transaction(self.wa, self.wb, 80)
+            ],
             reward=self.reward,
             difficulty=self.difficulty
         )
@@ -83,15 +89,35 @@ class TestBlock(TestCase):
         self.assertEqual(self.block.block_hash[:self.difficulty], "0" * self.difficulty)
 
     def test_verify_signed_transaction(self):
-        wa = Wallet()
-        wb = Wallet()
-        signed_txn = generate_random_signed_transaction(wa, wb)
-        self.block.verify_single_transaction(signed_txn)
+        signed_txn = generate_signed_transaction(self.wa, self.wb)
+        self.block.verify_signature(signed_txn)
 
     def test_verify_false_signed_transaction(self):
-        wa = Wallet()
-        wb = Wallet()
-        txn = generate_random_signed_transaction(wa, wb)
+        txn = generate_signed_transaction(self.wa, self.wb)
         txn.signature = b'123'
         with self.assertRaises(InvalidSignatureException):
-            self.block.verify_single_transaction(txn)
+            self.block.verify_signature(txn)
+
+    def test_verify_insufficient_funds(self):
+        signed_txn = generate_signed_transaction(self.wa, self.wb)
+        prev_block = Block(
+            prev_block=None,
+            transactions=[],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        block = Block(
+            prev_block=prev_block,
+            transactions=[
+                signed_txn
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+
+        with self.assertRaises(InsufficientFundsException):
+            block.verify_sufficient_funds(signed_txn)
+
+    def test_verify_sufficient_funds(self):
+        # self.fail()
+        pass
