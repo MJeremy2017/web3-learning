@@ -1,4 +1,5 @@
 import random
+import time
 from unittest import TestCase
 from typing import List
 from blockchain_impl import Block, Transaction, Wallet, verify
@@ -27,11 +28,12 @@ def generate_random_transactions(n_users: int, n_txn: int):
     return results
 
 
-def generate_signed_transaction(wa: Wallet, wb: Wallet, amount: int = 0):
+def generate_signed_transaction(wa: Wallet, wb: Wallet, amount: int = 0, ts=None) -> Transaction:
     unsigned_txn = Transaction(
         from_addr=wa.public_key,
         to_addr=wb.public_key,
         amount=random.randint(1, 10000) if amount == 0 else amount,
+        ts=time.time() if ts is None else ts
     )
     signed_txn = wa.sign(unsigned_txn)
     return signed_txn
@@ -119,5 +121,42 @@ class TestBlock(TestCase):
             block.verify_sufficient_funds(signed_txn)
 
     def test_verify_sufficient_funds(self):
-        # self.fail()
-        pass
+        txn1 = generate_signed_transaction(self.wc, self.wa, 30)
+        txn2 = generate_signed_transaction(self.wa, self.wb, 10)
+        prev_block = Block(
+            prev_block=None,
+            transactions=[txn1],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        block = Block(
+            prev_block=prev_block,
+            transactions=[
+                txn2
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+
+        block.verify_sufficient_funds(txn2)
+
+    def test_verify_sufficient_funds_in_the_same_block(self):
+        txn1 = generate_signed_transaction(self.wc, self.wa, 30, ts=1)
+        txn2 = generate_signed_transaction(self.wa, self.wb, 10, ts=2)
+        prev_block = Block(
+            prev_block=None,
+            transactions=[],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        block = Block(
+            prev_block=prev_block,
+            transactions=[
+                txn1,
+                txn2
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+
+        block.verify_sufficient_funds(txn2)

@@ -70,6 +70,7 @@ class Transaction:
     to_addr: PublicKey
     amount: int
     signature: bytes = b''
+    ts: int = int(time.time())
 
     def __str__(self):
         return str(self.from_addr) + str(self.to_addr) + str(self.amount) + self.signature.hex()
@@ -165,6 +166,16 @@ class Block:
         from_addr = txn.from_addr
         amount = txn.amount
         balance = 0
+
+        self.transactions.sort(key=lambda x: x.ts)
+        i = 0
+        while self.transactions[i] != txn:
+            if self.transactions[i].from_addr == from_addr:
+                balance -= txn.amount
+            if self.transactions[i].to_addr == from_addr:
+                balance += txn.amount
+            i += 1
+
         node: Block = self.prev_block
         while node:
             for txn in node.transactions:
