@@ -78,6 +78,9 @@ class Transaction:
     def encode(self):
         return (str(self.from_addr) + str(self.to_addr) + str(self.amount)).encode('utf-8')
 
+    def __eq__(self, other: Transaction):
+        return self.amount == other.amount and self.from_addr == other.from_addr and self.to_addr == other.to_addr
+
 
 def generate_key_pair():
     private_key = rsa.generate_private_key(
@@ -104,11 +107,12 @@ class Block:
         self.difficulty = difficulty
         self.nonce = 0
         self.block_hash = "0x0"
+        self.transactions.sort(key=lambda x: x.ts)
 
     def mine(self, miner_addr: PublicKey):
         start_time = time.time()
         coinbase_transaction = self._generate_coinbase_transaction(self.reward, miner_addr)
-        self.verify_transactions(self.transactions)
+        self.verify_valid_transactions(self.transactions)
         while 1:
             block_hash = self._hash(
                 self.prev_block.block_hash,
@@ -147,14 +151,13 @@ class Block:
     def _valid_block_hash(self, block_hash: str):
         return block_hash[:self.difficulty] == "0" * self.difficulty
 
-    def verify_transactions(self, transactions: List[Transaction]):
+    def verify_valid_transactions(self, transactions: List[Transaction]):
         for txn in transactions:
             self.verify_single_transaction(txn)
 
     def verify_single_transaction(self, txn: Transaction):
         self.verify_signature(txn)
         self.verify_sufficient_funds(txn)
-        self.verify_correct_reward()
 
     def verify_signature(self, txn: Transaction):
         public_key: PublicKey = txn.from_addr
@@ -167,7 +170,6 @@ class Block:
         amount = txn.amount
         balance = 0
 
-        self.transactions.sort(key=lambda x: x.ts)
         i = 0
         while self.transactions[i] != txn:
             if self.transactions[i].from_addr == from_addr:
@@ -187,7 +189,31 @@ class Block:
         if balance < amount:
             raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
-    def verify_correct_reward(self):
+    def verify_another_block(self, other: Block):
+        self.verify_correct_reward(other)
+        self.verify_correct_transactions(other)
+        self.verify_block_hash(other)
+
+    def verify_correct_reward(self, other: Block):
+        if self.reward != other.reward:
+            raise ValueError(f"Invalid reward for miner, expecting {self.reward} got {other.reward}")
+
+    def verify_correct_transactions(self, other: Block):
+        self.verify_transaction_fields(other.transactions)
+        self.verify_valid_transactions(other.transactions)
+
+    def verify_transaction_fields(self, transactions: List[Transaction]):
+        sorted_txns = sorted(transactions, key=lambda x: x.ts)
+        if len(transactions) != len(self.transactions):
+            raise ValueError("Unequal number of transactions")
+        for i in range(len(sorted_txns)):
+            if self.transactions[i] != sorted_txns[i]:
+                raise ValueError("Unequal transaction fields")
+
+
+    def verify_block_hash(self, other: Block):
+        # txn + nounce should equal the hash
+        # difficulty should match up
         pass
 
 

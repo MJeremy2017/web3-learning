@@ -65,7 +65,7 @@ class TestBlock(TestCase):
     difficulty = 2
 
     def setUp(self) -> None:
-        prev_block = Block(
+        self.prev_block = Block(
             prev_block=None,
             transactions=[
                 generate_signed_transaction(self.wc, self.wa, 100)
@@ -74,7 +74,7 @@ class TestBlock(TestCase):
             difficulty=self.difficulty
         )
         self.block = Block(
-            prev_block=prev_block,
+            prev_block=self.prev_block,
             transactions=[
                 generate_signed_transaction(self.wa, self.wb, 80)
             ],
@@ -160,3 +160,26 @@ class TestBlock(TestCase):
         )
 
         block.verify_sufficient_funds(txn2)
+
+    def test_verify_another_block_with_wrong_transaction_fields(self):
+        other = Block(
+            prev_block=self.prev_block,
+            transactions=[
+                generate_signed_transaction(self.wa, self.wb, 70)
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        with self.assertRaises(ValueError):
+            self.block.verify_another_block(other)
+
+    def test_verify_another_block_with_correct_transaction_fields(self):
+        other = Block(
+            prev_block=self.prev_block,
+            transactions=[
+                generate_signed_transaction(self.wa, self.wb, 80)
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        self.block.verify_another_block(other)
