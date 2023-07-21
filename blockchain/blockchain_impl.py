@@ -108,6 +108,7 @@ class Block:
         self.nonce = 0
         self.block_hash = "0x0"
         self.transactions.sort(key=lambda x: x.ts)
+        self.coin_base_transaction = None
 
     def mine(self, miner_addr: PublicKey):
         start_time = time.time()
@@ -130,11 +131,13 @@ class Block:
 
     def _generate_coinbase_transaction(self, reward: int, miner_addr: PublicKey) -> Transaction:
         # coinbase transaction does not need a signature
-        return Transaction(
-            from_addr=GenesisPublicKey(None),
-            to_addr=miner_addr,
-            amount=reward,
-        )
+        if self.coin_base_transaction is None:
+            self.coin_base_transaction = Transaction(
+                from_addr=GenesisPublicKey(None),
+                to_addr=miner_addr,
+                amount=reward,
+            )
+        return self.coin_base_transaction
 
     def _hash(self,
               prev_hash: str,
@@ -210,11 +213,23 @@ class Block:
             if self.transactions[i] != sorted_txns[i]:
                 raise ValueError("Unequal transaction fields")
 
-
     def verify_block_hash(self, other: Block):
-        # txn + nounce should equal the hash
         # difficulty should match up
-        pass
+        calculated_hash = self._hash(
+            prev_hash=other.prev_block.block_hash,
+            transactions=other.transactions,
+            coinbase_transaction=other.coin_base_transaction,
+            nonce=other.nonce
+        )
+        if other.block_hash != calculated_hash:
+            raise ValueError(f"Wrong block hash, expected hash {calculated_hash} got hash {other.block_hash}")
+
+        if self.difficulty != other.difficulty:
+            raise ValueError(f"Wrong difficulty, expected difficulty {self.difficulty} got difficulty {other.difficulty}")
+
+        # verify difficulty and hash correct
+        if other.block_hash[:self.difficulty] != "0" * self.difficulty:
+            raise ValueError(f"Wrong block {other.block_hash} with difficulty {self.difficulty}")
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:

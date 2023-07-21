@@ -182,4 +182,46 @@ class TestBlock(TestCase):
             reward=self.reward,
             difficulty=self.difficulty
         )
+        other.mine(self.miner.public_key)
         self.block.verify_another_block(other)
+
+    def test_verify_wrong_block_hash(self):
+        other = Block(
+            prev_block=self.prev_block,
+            transactions=[
+                generate_signed_transaction(self.wa, self.wb, 80)
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        with self.assertRaises(ValueError):
+            self.block.verify_block_hash(other)
+
+    def test_verify_correct_block_hash(self):
+        other = Block(
+            prev_block=self.prev_block,
+            transactions=[
+                generate_signed_transaction(self.wa, self.wb, 80)
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        other_miner = Wallet()
+        other.mine(other_miner.public_key)
+        self.block.verify_block_hash(other)
+
+    def test_verify_other_block(self):
+        other = Block(
+            prev_block=self.prev_block,
+            transactions=[
+                generate_signed_transaction(self.wa, self.wb, 80)
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        other_miner = Wallet()
+        other.mine(other_miner.public_key)
+        self.block.verify_another_block(other)
+
+
+
