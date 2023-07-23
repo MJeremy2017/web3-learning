@@ -3,6 +3,7 @@ import time
 from unittest import TestCase
 from typing import List
 from blockchain_impl import Block, Transaction, Wallet, verify
+from blockchain_impl import BlockChain
 import secrets
 from exceptions import *
 
@@ -224,4 +225,34 @@ class TestBlock(TestCase):
         self.block.verify_another_block(other)
 
 
+class TestBlockChain(TestCase):
+    wa = Wallet()
+    wb = Wallet()
+    wc = Wallet()
+    wm = Wallet()
+    reward = 10
+    difficulty = 2
 
+    def setUp(self) -> None:
+        pass
+
+    def test_mine_succeed_with_valid_block(self):
+        txn1 = generate_signed_transaction(self.wc, self.wa, 30)
+        txn2 = generate_signed_transaction(self.wa, self.wb, 10)
+        prev_block = Block(
+            prev_block=None,
+            transactions=[txn1],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        block = Block(
+            prev_block=prev_block,
+            transactions=[
+                txn2
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        chain = [prev_block, block]
+        block_chain = BlockChain(chain=chain, reward=self.reward, difficulty=self.difficulty)
+        block_chain.mine(self.wm.public_key)

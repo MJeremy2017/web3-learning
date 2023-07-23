@@ -102,6 +102,7 @@ class Wallet:
 class Block:
     def __init__(self, prev_block: Union[Block, None], transactions: List[Transaction], reward: int, difficulty: int):
         self.prev_block = prev_block
+        self.next_block = None
         self.transactions = transactions
         self.reward = reward
         self.difficulty = difficulty
@@ -225,11 +226,54 @@ class Block:
             raise ValueError(f"Wrong block hash, expected hash {calculated_hash} got hash {other.block_hash}")
 
         if self.difficulty != other.difficulty:
-            raise ValueError(f"Wrong difficulty, expected difficulty {self.difficulty} got difficulty {other.difficulty}")
+            raise ValueError(
+                f"Wrong difficulty, expected difficulty {self.difficulty} got difficulty {other.difficulty}")
 
         # verify difficulty and hash correct
         if other.block_hash[:self.difficulty] != "0" * self.difficulty:
             raise ValueError(f"Wrong block {other.block_hash} with difficulty {self.difficulty}")
+
+
+class BlockChain:
+    """
+    1. save/add the pending transactions
+    2. add and validate a new block
+
+    Q:
+    1. how to broadcast to other nodes?
+    2. what if the added transaction is wrong?
+    """
+
+    def __init__(self, chain: List[Block], reward: int, difficulty: int):
+        self.reward = reward
+        self.difficulty = difficulty
+        self.pending_transactions: List[Transaction] = []
+        self.chain: List[Block] = chain
+
+    def add_transaction(self, transaction: Transaction):
+        self.pending_transactions.append(transaction)
+
+    def mine(self, miner_addr: PublicKey):
+        last_block = self.chain[-1]
+        block_new = Block(
+            prev_block=last_block,
+            transactions=self.pending_transactions,
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        try:
+            block_new.mine(miner_addr)
+            self.pending_transactions = []
+            self.add_block(block_new, need_verify=False)
+        except Exception as e:
+            print(f"Failed to mine {e}")
+
+    def add_block(self, block: Block, need_verify=False):
+        if need_verify:
+            pass
+        else:
+            last_block = self.chain[-1]
+            last_block.next_block = block
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
