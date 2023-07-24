@@ -274,6 +274,7 @@ class BlockChain:
         else:
             last_block = self.chain[-1]
             last_block.next_block = block
+            self.chain.append(block)
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
