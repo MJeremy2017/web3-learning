@@ -249,6 +249,7 @@ class BlockChain:
         self.difficulty = difficulty
         self.pending_transactions: List[Transaction] = []
         self.chain: List[Block] = chain
+        self.ongoing_block: Block = None
 
     def add_transaction(self, transaction: Transaction):
         self.pending_transactions.append(transaction)
@@ -270,11 +271,16 @@ class BlockChain:
 
     def add_block(self, block: Block, need_verify=False):
         if need_verify:
-            pass
-        else:
-            last_block = self.chain[-1]
-            last_block.next_block = block
-            self.chain.append(block)
+            try:
+                self.verify_block(block)
+            except Exception as e:
+                print(f"Invalid block {e}")
+        last_block = self.chain[-1]
+        last_block.next_block = block
+        self.chain.append(block)
+
+    def verify_block(self, other: Block):
+        self.ongoing_block.verify_another_block(other)
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
