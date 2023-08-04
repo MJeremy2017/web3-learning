@@ -40,7 +40,11 @@ def generate_signed_transaction(wa: Wallet, wb: Wallet, amount: int = 0, ts=None
     return signed_txn
 
 
-def generate_blockchain(length: int, n_transactions: int = 2, n_users: int = 3, with_pending: bool = False):
+def generate_blockchain(length: int,
+                        n_transactions: int = 2,
+                        n_users: int = 3,
+                        reward: int = 10,
+                        difficulty: int = 1):
     wallets = [Wallet() for _ in range(n_users)]
     accounts = [100 for _ in range(n_users)]
     miner_addr = wallets[0].public_key
@@ -96,8 +100,8 @@ def generate_blockchain(length: int, n_transactions: int = 2, n_users: int = 3, 
         first = False
     return BlockChain(
         chain=chain,
-        reward=10,
-        difficulty=1
+        reward=reward,
+        difficulty=difficulty
     ), accounts, wallets
 
 
@@ -326,3 +330,27 @@ class TestBlockChain(TestCase):
         blockchain.mine(self.wm.public_key)
         new_last_block = blockchain.chain[-1]
         self.assertEqual(new_last_block, last_block)
+
+    def test_verify_correct_block(self):
+        blockchain, accounts, wallets = generate_blockchain(
+            length=3,
+            n_transactions=1,
+            n_users=3,
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        prev_block = blockchain.chain[-1]
+        other = Block(
+            prev_block=prev_block,
+            transactions=[
+                generate_signed_transaction(
+                    wallets[0],
+                    wallets[1],
+                    amount=random.randint(1, accounts[0])
+                )
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        other.mine(self.wa.public_key)
+        blockchain.verify_block(other)
