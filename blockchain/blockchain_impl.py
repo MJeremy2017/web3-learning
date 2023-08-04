@@ -104,6 +104,33 @@ def hash_block(
     return hashlib.sha256(encode_str).hexdigest()
 
 
+def verify_sufficient_funds(block: Block, txn: Transaction):
+    from_addr = txn.from_addr
+    amount = txn.amount
+    balance = 0
+    transactions = block.transactions
+
+    i = 0
+    # transactions are already sorted
+    while transactions[i] != txn:
+        if transactions[i].from_addr == from_addr:
+            balance -= txn.amount
+        if transactions[i].to_addr == from_addr:
+            balance += txn.amount
+        i += 1
+
+    node: Block = block.prev_block
+    while node:
+        for txn in node.transactions:
+            if txn.from_addr == from_addr:
+                balance -= txn.amount
+            if txn.to_addr == from_addr:
+                balance += txn.amount
+        node = node.prev_block
+    if balance < amount:
+        raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
+
+
 class Wallet:
     def __init__(self):
         self.private_key, self.public_key = generate_key_pair()
@@ -162,38 +189,13 @@ class Block:
 
     def verify_single_transaction(self, txn: Transaction):
         self.verify_signature(txn)
-        self.verify_sufficient_funds(txn)
+        verify_sufficient_funds(self, txn)
 
     def verify_signature(self, txn: Transaction):
         public_key: PublicKey = txn.from_addr
         is_valid_txn = verify(public_key, txn)
         if not is_valid_txn:
             raise InvalidSignatureException(f"Invalid transaction {txn}")
-
-    def verify_sufficient_funds(self, txn: Transaction):
-        from_addr = txn.from_addr
-        amount = txn.amount
-        balance = 0
-
-        i = 0
-        # transactions are already sorted
-        while self.transactions[i] != txn:
-            if self.transactions[i].from_addr == from_addr:
-                balance -= txn.amount
-            if self.transactions[i].to_addr == from_addr:
-                balance += txn.amount
-            i += 1
-
-        node: Block = self.prev_block
-        while node:
-            for txn in node.transactions:
-                if txn.from_addr == from_addr:
-                    balance -= txn.amount
-                if txn.to_addr == from_addr:
-                    balance += txn.amount
-            node = node.prev_block
-        if balance < amount:
-            raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
     def verify_correct_reward(self, other: Block):
         if self.reward != other.reward:
@@ -268,8 +270,7 @@ class BlockChain:
             raise ValueError(f"Invalid reward for miner, expecting {self.reward} got {other.reward}")
 
     def verify_correct_transactions(self, other: Block):
-        # self.verify_transaction_fields(other.transactions)
-        self.verify_valid_transactions(other.transactions)
+        self.verify_valid_transactions(other)
 
     def verify_block_hash(self, other: Block):
         calculated_hash = hash_block(
@@ -289,44 +290,20 @@ class BlockChain:
         if other.block_hash[:self.difficulty] != "0" * self.difficulty:
             raise ValueError(f"Wrong block {other.block_hash} with difficulty {self.difficulty}")
 
-    def verify_valid_transactions(self, transactions: List[Transaction]):
-        sorted_txns = sorted(transactions, key=lambda x: x.ts)
+    def verify_valid_transactions(self, block: Block):
+        transactions = block.transactions
         for txn in transactions:
-            self.verify_single_transaction(sorted_txns, txn)
+            self.verify_single_transaction(block, txn)
 
-    def verify_single_transaction(self, sorted_txns: List[Transaction], txn: Transaction):
+    def verify_single_transaction(self, block: Block, txn: Transaction):
         self.verify_signature(txn)
-        self.verify_sufficient_funds(sorted_txns, txn)
+        verify_sufficient_funds(block, txn)
 
     def verify_signature(self, txn: Transaction):
         public_key: PublicKey = txn.from_addr
         is_valid_txn = verify(public_key, txn)
         if not is_valid_txn:
             raise InvalidSignatureException(f"Invalid transaction {txn}")
-
-    def verify_sufficient_funds(self, sorted_txns: List[Transaction], txn: Transaction):
-        from_addr = txn.from_addr
-        amount = txn.amount
-        balance = 0
-
-        i = 0
-        while sorted_txns[i] != txn:
-            if sorted_txns[i].from_addr == from_addr:
-                balance -= txn.amount
-            if sorted_txns[i].to_addr == from_addr:
-                balance += txn.amount
-            i += 1
-
-        node: Block = self.chain[-1]
-        while node:
-            for txn in node.transactions:
-                if txn.from_addr == from_addr:
-                    balance -= txn.amount
-                if txn.to_addr == from_addr:
-                    balance += txn.amount
-            node = node.prev_block
-        if balance < amount:
-            raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
