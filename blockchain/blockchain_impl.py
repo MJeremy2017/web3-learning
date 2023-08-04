@@ -176,6 +176,7 @@ class Block:
         balance = 0
 
         i = 0
+        # transactions are already sorted
         while self.transactions[i] != txn:
             if self.transactions[i].from_addr == from_addr:
                 balance -= txn.amount
@@ -194,11 +195,6 @@ class Block:
         if balance < amount:
             raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
-    def verify_another_block(self, other: Block):
-        self.verify_correct_reward(other)
-        self.verify_correct_transactions(other)
-        self.verify_block_hash(other)
-
     def verify_correct_reward(self, other: Block):
         if self.reward != other.reward:
             raise ValueError(f"Invalid reward for miner, expecting {self.reward} got {other.reward}")
@@ -214,25 +210,6 @@ class Block:
         for i in range(len(sorted_txns)):
             if self.transactions[i] != sorted_txns[i]:
                 raise ValueError("Unequal transaction fields")
-
-    def verify_block_hash(self, other: Block):
-        # difficulty should match up
-        calculated_hash = hash_block(
-            prev_hash=other.prev_block.block_hash,
-            transactions=other.transactions,
-            coinbase_transaction=other.coin_base_transaction,
-            nonce=other.nonce
-        )
-        if other.block_hash != calculated_hash:
-            raise ValueError(f"Wrong block hash, expected hash {calculated_hash} got hash {other.block_hash}")
-
-        if self.difficulty != other.difficulty:
-            raise ValueError(
-                f"Wrong difficulty, expected difficulty {self.difficulty} got difficulty {other.difficulty}")
-
-        # verify difficulty and hash correct
-        if other.block_hash[:self.difficulty] != "0" * self.difficulty:
-            raise ValueError(f"Wrong block {other.block_hash} with difficulty {self.difficulty}")
 
 
 class BlockChain:
@@ -295,7 +272,6 @@ class BlockChain:
         self.verify_valid_transactions(other.transactions)
 
     def verify_block_hash(self, other: Block):
-        # difficulty should match up
         calculated_hash = hash_block(
             prev_hash=other.prev_block.block_hash,
             transactions=other.transactions,

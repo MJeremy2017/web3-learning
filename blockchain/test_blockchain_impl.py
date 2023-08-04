@@ -54,7 +54,7 @@ def generate_blockchain(length: int,
         txns = []
         for _ in range(n_transactions):
             sender_idx = random.randint(0, n_users - 1)
-            while accounts[sender_idx] < 1:
+            while accounts[sender_idx] <= 1:
                 sender_idx = random.randint(0, n_users)
             receiver_idx = (sender_idx + 1) % n_users
             amount = random.randint(1, accounts[sender_idx] - 1)
@@ -226,68 +226,6 @@ class TestBlock(TestCase):
         )
 
         block.verify_sufficient_funds(txn2)
-
-    def test_verify_another_block_with_wrong_transaction_fields(self):
-        other = Block(
-            prev_block=self.prev_block,
-            transactions=[
-                generate_signed_transaction(self.wa, self.wb, 70)
-            ],
-            reward=self.reward,
-            difficulty=self.difficulty
-        )
-        with self.assertRaises(ValueError):
-            self.block.verify_another_block(other)
-
-    def test_verify_another_block_with_correct_transaction_fields(self):
-        other = Block(
-            prev_block=self.prev_block,
-            transactions=[
-                generate_signed_transaction(self.wa, self.wb, 80)
-            ],
-            reward=self.reward,
-            difficulty=self.difficulty
-        )
-        other.mine(self.miner.public_key)
-        self.block.verify_another_block(other)
-
-    def test_verify_wrong_block_hash(self):
-        other = Block(
-            prev_block=self.prev_block,
-            transactions=[
-                generate_signed_transaction(self.wa, self.wb, 80)
-            ],
-            reward=self.reward,
-            difficulty=self.difficulty
-        )
-        with self.assertRaises(ValueError):
-            self.block.verify_block_hash(other)
-
-    def test_verify_correct_block_hash(self):
-        other = Block(
-            prev_block=self.prev_block,
-            transactions=[
-                generate_signed_transaction(self.wa, self.wb, 80)
-            ],
-            reward=self.reward,
-            difficulty=self.difficulty
-        )
-        other_miner = Wallet()
-        other.mine(other_miner.public_key)
-        self.block.verify_block_hash(other)
-
-    def test_verify_other_block(self):
-        other = Block(
-            prev_block=self.prev_block,
-            transactions=[
-                generate_signed_transaction(self.wa, self.wb, 80)
-            ],
-            reward=self.reward,
-            difficulty=self.difficulty
-        )
-        other_miner = Wallet()
-        other.mine(other_miner.public_key)
-        self.block.verify_another_block(other)
 
 
 class TestBlockChain(TestCase):
