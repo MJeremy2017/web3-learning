@@ -292,3 +292,29 @@ class TestBlockChain(TestCase):
         )
         other.mine(self.wa.public_key)
         blockchain.verify_block(other)
+
+    def test_verify_wrong_block(self):
+        blockchain, accounts, wallets = generate_blockchain(
+            length=3,
+            n_transactions=1,
+            n_users=3,
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        invalid_txn = generate_signed_transaction(
+            wallets[0],
+            wallets[1],
+            amount=random.randint(1, accounts[0])
+        )
+        invalid_txn.signature = b'0x0'
+        prev_block = blockchain.chain[-1]
+        other = Block(
+            prev_block=prev_block,
+            transactions=[
+                invalid_txn
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        with self.assertRaises(InvalidSignatureException):
+            blockchain.verify_block(other)

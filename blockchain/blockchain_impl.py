@@ -245,8 +245,8 @@ class BlockChain:
         )
         try:
             block_new.mine(miner_addr)
-            self.pending_transactions = []
             self.add_block(block_new, need_verify=False)
+            self.pending_transactions = []
         except Exception as e:
             print(f"Failed to mine {e}")
 
