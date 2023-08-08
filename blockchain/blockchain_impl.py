@@ -221,7 +221,9 @@ class BlockChain:
 
     Q:
     1. how to broadcast to other nodes?
-    2. what if the added transaction is wrong?
+    Hardcoded Seed Nodes: Bitcoin Core, the reference implementation of Bitcoin,
+    includes a list of hardcoded seed nodes.
+    These are known, reputable nodes that can help bootstrap a new node's connection to the network.
     """
 
     def __init__(self, chain: List[Block], reward: int, difficulty: int):
@@ -229,8 +231,6 @@ class BlockChain:
         self.difficulty = difficulty
         self.pending_transactions: List[Transaction] = []
         self.chain: List[Block] = chain
-        # TODO verify from blockchain
-        self.ongoing_block: Block = None
 
     def add_transaction(self, transaction: Transaction):
         self.pending_transactions.append(transaction)
@@ -320,3 +320,42 @@ def verify(public_key: PublicKey, transaction: Transaction) -> bool:
         return True
     except InvalidSignature:
         return False
+
+
+if __name__ == '__main__':
+    wallets = [Wallet() for _ in range(3)]
+
+    genesis_block = Block(
+        prev_block=None,
+        transactions=[
+            Transaction(
+                from_addr=GenesisPublicKey(None),
+                to_addr=wallets[i].public_key,
+                amount=100
+            ) for i in range(3)
+        ],
+        reward=10,
+        difficulty=1
+    )
+
+    chain = [genesis_block]
+
+    block_chain = BlockChain(chain=chain, reward=10, difficulty=1)
+    txn1 = Transaction(
+        wallets[0].public_key,
+        wallets[1].public_key,
+        amount=10,
+    )
+    signed_txn1 = wallets[0].sign(txn1)
+    block_chain.add_transaction(signed_txn1)
+
+    txn2 = Transaction(
+        wallets[0].public_key,
+        wallets[2].public_key,
+        amount=10,
+    )
+    signed_txn2 = wallets[0].sign(txn2)
+    block_chain.add_transaction(signed_txn2)
+
+    block_chain.mine(wallets[2].public_key)
+    print("chain length", len(block_chain.chain))
