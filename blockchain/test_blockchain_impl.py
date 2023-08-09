@@ -1,7 +1,7 @@
 import random
 from unittest import TestCase
 from typing import List
-from blockchain_impl import Block, Transaction, Wallet, verify, verify_sufficient_funds
+from blockchain_impl import Block, Transaction, Wallet, verify, verify_transaction_has_sufficient_funds
 import secrets
 from exceptions import *
 from utils import generate_signed_transaction, generate_blockchain
@@ -107,7 +107,7 @@ class TestBlock(TestCase):
         )
 
         with self.assertRaises(InsufficientFundsException):
-            verify_sufficient_funds(block, signed_txn)
+            verify_transaction_has_sufficient_funds(block, signed_txn)
 
     def test_verify_sufficient_funds(self):
         txn1 = generate_signed_transaction(self.wc, self.wa, 30)
@@ -127,7 +127,7 @@ class TestBlock(TestCase):
             difficulty=self.difficulty
         )
 
-        verify_sufficient_funds(block, txn2)
+        verify_transaction_has_sufficient_funds(block, txn2)
 
     def test_verify_sufficient_funds_in_the_same_block(self):
         txn1 = generate_signed_transaction(self.wc, self.wa, 30, ts=1)
@@ -148,7 +148,29 @@ class TestBlock(TestCase):
             difficulty=self.difficulty
         )
 
-        verify_sufficient_funds(block, txn2)
+        verify_transaction_has_sufficient_funds(block, txn2)
+
+    def test_verify_insufficient_funds_in_the_same_block(self):
+        txn1 = generate_signed_transaction(self.wc, self.wa, 10, ts=1)
+        txn2 = generate_signed_transaction(self.wa, self.wb, 30, ts=2)
+        prev_block = Block(
+            prev_block=None,
+            transactions=[],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+        block = Block(
+            prev_block=prev_block,
+            transactions=[
+                txn1,
+                txn2
+            ],
+            reward=self.reward,
+            difficulty=self.difficulty
+        )
+
+        with self.assertRaises(InsufficientFundsException):
+            verify_transaction_has_sufficient_funds(block, txn2)
 
 
 class TestBlockChain(TestCase):
