@@ -55,6 +55,9 @@ class PublicKey:
     def public_key(self):
         return self._public_key
 
+    def __eq__(self, other: PublicKey):
+        return str(self) == str(other)
+
 
 class GenesisPublicKey(PublicKey):
     def __init__(self, key: RSAPublicKey):
@@ -82,7 +85,7 @@ class Transaction:
         return self.amount == other.amount and self.from_addr == other.from_addr and self.to_addr == other.to_addr
 
 
-def generate_key_pair():
+def _generate_key_pair():
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048
@@ -104,7 +107,7 @@ def hash_block(
     return hashlib.sha256(encode_str).hexdigest()
 
 
-def verify_sufficient_funds(block: Block, txn: Transaction):
+def verify_transaction_has_sufficient_funds(block: Block, txn: Transaction):
     from_addr = txn.from_addr
     amount = txn.amount
     balance = 0
@@ -114,9 +117,9 @@ def verify_sufficient_funds(block: Block, txn: Transaction):
     # transactions are already sorted
     while transactions[i] != txn:
         if transactions[i].from_addr == from_addr:
-            balance -= txn.amount
+            balance -= transactions[i].amount
         if transactions[i].to_addr == from_addr:
-            balance += txn.amount
+            balance += transactions[i].amount
         i += 1
 
     node: Block = block.prev_block
@@ -133,7 +136,7 @@ def verify_sufficient_funds(block: Block, txn: Transaction):
 
 class Wallet:
     def __init__(self):
-        self.private_key, self.public_key = generate_key_pair()
+        self.private_key, self.public_key = _generate_key_pair()
 
     def sign(self, transaction: Transaction) -> Transaction:
         return self.private_key.sign(transaction)
@@ -189,7 +192,7 @@ class Block:
 
     def verify_single_transaction(self, txn: Transaction):
         self.verify_signature(txn)
-        verify_sufficient_funds(self, txn)
+        verify_transaction_has_sufficient_funds(self, txn)
 
     def verify_signature(self, txn: Transaction):
         public_key: PublicKey = txn.from_addr
@@ -297,7 +300,7 @@ class BlockChain:
 
     def verify_single_transaction(self, block: Block, txn: Transaction):
         self.verify_signature(txn)
-        verify_sufficient_funds(block, txn)
+        verify_transaction_has_sufficient_funds(block, txn)
 
     def verify_signature(self, txn: Transaction):
         public_key: PublicKey = txn.from_addr
