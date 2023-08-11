@@ -135,8 +135,12 @@ def verify_transaction_has_sufficient_funds(block: Block, txn: Transaction):
 
 
 class Wallet:
-    def __init__(self):
-        self.private_key, self.public_key = _generate_key_pair()
+    def __init__(self, public_key=None, private_key=None):
+        if public_key is None or private_key is None:
+            self.private_key, self.public_key = _generate_key_pair()
+        else:
+            self.public_key = public_key
+            self.private_key = private_key
 
     def sign(self, transaction: Transaction) -> Transaction:
         return self.private_key.sign(transaction)
