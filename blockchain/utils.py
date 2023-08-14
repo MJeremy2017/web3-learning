@@ -1,6 +1,9 @@
 from blockchain_impl import Block, Transaction, Wallet
-from blockchain_impl import BlockChain, GenesisPublicKey
+from blockchain_impl import BlockChain, GenesisPublicKey, PublicKey, PrivateKey
+from cryptography.hazmat.primitives import serialization
 import random
+from typing import List
+import pickle
 import time
 
 
@@ -78,3 +81,46 @@ def generate_blockchain(length: int,
         reward=reward,
         difficulty=difficulty
     ), accounts, wallets
+
+
+def deserialize_public_key(data: str) -> PublicKey:
+    return PublicKey(serialization.load_pem_public_key(data.encode('utf-8')))
+
+
+def deserialize_private_key(data: str) -> PrivateKey:
+    return PrivateKey(serialization.load_pem_private_key(data.encode('utf-8'), password=None))
+
+
+def pickle_wallets(wallets: List[Wallet]):
+    wallets_serial = []
+    for w in wallets:
+        wallets_serial.append((str(w.public_key), str(w.private_key)))
+    with open('wallets', 'wb') as f:
+        pickle.dump(wallets_serial, f)
+
+
+def unpickle_wallets(file: str) -> List[Wallet]:
+    with open(file, 'rb') as f:
+        wallets_serial = pickle.load(f)
+    wallets = []
+    for w in wallets_serial:
+        wd = Wallet(public_key=deserialize_public_key(w[0]), private_key=deserialize_private_key(w[1]))
+        wallets.append(wd)
+    return wallets
+
+
+def pickle_accounts(accounts: List[int]):
+    with open('accounts', 'wb') as f:
+        pickle.dump(accounts, f)
+
+
+def unpickle_accounts(file: str) -> List[int]:
+    with open(file, 'rb') as f:
+        accounts = pickle.load(f)
+    return accounts
+
+
+def save_accounts_and_wallets(accounts: List[int], wallets: List[Wallet]):
+    pickle_accounts(accounts)
+
+    pickle_wallets(wallets)
