@@ -186,13 +186,11 @@ class TestBlockChain(TestCase):
 
     def test_mine_succeed_with_valid_block(self):
         blockchain, accounts, wallets = generate_blockchain(length=3, n_transactions=1, n_users=3)
-        blockchain.add_transaction(
-            generate_signed_transaction(
-                wallets[0],
-                wallets[1],
-                amount=random.randint(1, accounts[0])
-            )
-        )
+        blockchain.add_transaction(generate_signed_transaction(
+            wallets[0],
+            wallets[1],
+            amount=random.randint(1, accounts[0])
+        ),,
         last_block = blockchain.chain[-1]
         blockchain.mine(self.wm.public_key)
         new_last_block = blockchain.chain[-1]
@@ -208,7 +206,7 @@ class TestBlockChain(TestCase):
         )
         txn.signature = b'0x0'
 
-        blockchain.add_transaction(txn)
+        blockchain.add_transaction(txn,,
         last_block = blockchain.chain[-1]
         blockchain.mine(self.wm.public_key)
         new_last_block = blockchain.chain[-1]

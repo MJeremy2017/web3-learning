@@ -122,5 +122,4 @@ def unpickle_accounts(file: str) -> List[int]:
 
 def save_accounts_and_wallets(accounts: List[int], wallets: List[Wallet]):
     pickle_accounts(accounts)
-
     pickle_wallets(wallets)
