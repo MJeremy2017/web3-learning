@@ -3,13 +3,14 @@ from __future__ import annotations
 from cryptography.exceptions import InvalidSignature
 import logging
 import time
-from typing import List, Union
+from typing import List, Union, Tuple
 from dataclasses import dataclass
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
 from exceptions import *
+from client import add_transaction
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,7 +83,8 @@ class Transaction:
         return (str(self.from_addr) + str(self.to_addr) + str(self.amount)).encode('utf-8')
 
     def __eq__(self, other: Transaction):
-        return self.amount == other.amount and self.from_addr == other.from_addr and self.to_addr == other.to_addr
+        return self.amount == other.amount and self.from_addr == other.from_addr \
+            and self.to_addr == other.to_addr and self.signature == other.signature
 
 
 def _generate_key_pair():
@@ -233,14 +235,16 @@ class BlockChain:
     These are known, reputable nodes that can help bootstrap a new node's connection to the network.
     """
 
-    def __init__(self, chain: List[Block], reward: int, difficulty: int):
+    def __init__(self, chain: List[Block], reward: int, difficulty: int, peers: List[Tuple]):
         self.reward = reward
         self.difficulty = difficulty
         self.pending_transactions: List[Transaction] = []
         self.chain: List[Block] = chain
+        self.peers: List = peers if peers else []
 
     def add_transaction(self, transaction: Transaction):
         self.pending_transactions.append(transaction)
+        self.broadcast_transaction(transaction)
 
     def mine(self, miner_addr: PublicKey):
         last_block = self.chain[-1]
@@ -311,6 +315,10 @@ class BlockChain:
         is_valid_txn = verify(public_key, txn)
         if not is_valid_txn:
             raise InvalidSignatureException(f"Invalid transaction {txn}")
+
+    def broadcast_transaction(self, transaction: Transaction):
+        for peer in self.peers:
+            add_transaction(peer, transaction)
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
