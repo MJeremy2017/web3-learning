@@ -22,8 +22,8 @@ def add_transaction(sender: str, receiver: str, signature: str, amount: int):
 
 
 if __name__ == '__main__':
-    accounts = unpickle_accounts('accounts')
-    wallets = unpickle_wallets('wallets')
+    accounts = unpickle_accounts('tmp/accounts')
+    wallets = unpickle_wallets('tmp/wallets')
 
     wa = wallets[0]
     wb = wallets[1]

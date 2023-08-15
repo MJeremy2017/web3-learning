@@ -95,7 +95,7 @@ def pickle_wallets(wallets: List[Wallet]):
     wallets_serial = []
     for w in wallets:
         wallets_serial.append((str(w.public_key), str(w.private_key)))
-    with open('wallets', 'wb') as f:
+    with open('tmp/wallets', 'wb') as f:
         pickle.dump(wallets_serial, f)
 
 
@@ -110,7 +110,7 @@ def unpickle_wallets(file: str) -> List[Wallet]:
 
 
 def pickle_accounts(accounts: List[int]):
-    with open('accounts', 'wb') as f:
+    with open('tmp/accounts', 'wb') as f:
         pickle.dump(accounts, f)
 
 

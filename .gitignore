@@ -4,6 +4,8 @@ __pycache__/
 *$py.class
 .idea
 
+blockchain/tmp/*
+
 # C extensions
 *.so
 eth-todo-list/node_modules
