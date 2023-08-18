@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey, RSAPrivateKey
 from cryptography.hazmat.primitives import hashes, serialization
 from exceptions import *
-from client import add_transaction
+from client_utils import add_transaction
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -83,8 +83,8 @@ class Transaction:
         return (str(self.from_addr) + str(self.to_addr) + str(self.amount)).encode('utf-8')
 
     def __eq__(self, other: Transaction):
-        return self.amount == other.amount and self.from_addr == other.from_addr \
-            and self.to_addr == other.to_addr and self.signature == other.signature
+        return self.amount == other.amount and str(self.from_addr) == str(other.from_addr) \
+            and str(self.to_addr) == str(other.to_addr) and self.signature == other.signature
 
 
 def _generate_key_pair():
@@ -235,7 +235,7 @@ class BlockChain:
     These are known, reputable nodes that can help bootstrap a new node's connection to the network.
     """
 
-    def __init__(self, chain: List[Block], reward: int, difficulty: int, peers: List[Tuple]):
+    def __init__(self, chain: List[Block], reward: int, difficulty: int, peers: List[Tuple] = None):
         self.reward = reward
         self.difficulty = difficulty
         self.pending_transactions: List[Transaction] = []
@@ -243,6 +243,12 @@ class BlockChain:
         self.peers: List = peers if peers else []
 
     def add_transaction(self, transaction: Transaction):
+        print("pending transaction len", len(self.pending_transactions))
+        if len(self.pending_transactions):
+            return
+        for current_txn in self.pending_transactions:
+            if transaction == current_txn:
+                return
         self.pending_transactions.append(transaction)
         self.broadcast_transaction(transaction)
 
@@ -316,9 +322,21 @@ class BlockChain:
         if not is_valid_txn:
             raise InvalidSignatureException(f"Invalid transaction {txn}")
 
+    def add_peer(self, peer: Tuple):
+        self.peers.append(peer)
+
     def broadcast_transaction(self, transaction: Transaction):
+        print('peers', self.peers)
         for peer in self.peers:
-            add_transaction(peer, transaction)
+            host, port = peer[0], peer[1]
+            print("broadcasting transaction", host, port)
+            add_transaction(
+                host=host,
+                port=port,
+                sender=str(transaction.from_addr),
+                receiver=str(transaction.to_addr),
+                amount=transaction.amount,
+                signature=str(transaction.signature))
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:
