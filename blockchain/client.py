@@ -20,5 +20,5 @@ if __name__ == '__main__':
         port=PORT,
         sender=str(txn.from_addr),
         receiver=str(txn.to_addr),
-        signature=str(txn.signature),
+        signature=txn.signature,
         amount=txn.amount)

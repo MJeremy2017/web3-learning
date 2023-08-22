@@ -3,12 +3,10 @@ import base64
 
 
 def add_transaction(host: str, port: int, sender: str, receiver: str, signature: bytes, amount: int):
-    print('adding transaction, type', type(signature))
-    # TODO fix error using base64
     data = {
         "sender": sender,
         "receiver": receiver,
-        "signature": signature.decode('utf-8'),
+        "signature": base64.b64encode(signature).decode('utf-8'),
         "amount": amount
     }
     url = host + ":" + str(port) + "/transaction/new"

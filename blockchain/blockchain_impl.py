@@ -244,8 +244,6 @@ class BlockChain:
 
     def add_transaction(self, transaction: Transaction):
         print("pending transaction len", len(self.pending_transactions))
-        if len(self.pending_transactions):
-            return
         for current_txn in self.pending_transactions:
             if transaction == current_txn:
                 return
@@ -336,7 +334,7 @@ class BlockChain:
                 sender=str(transaction.from_addr),
                 receiver=str(transaction.to_addr),
                 amount=transaction.amount,
-                signature=str(transaction.signature))
+                signature=transaction.signature)
 
 
 def verify(public_key: PublicKey, transaction: Transaction) -> bool:

@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from blockchain_impl import BlockChain, Transaction
 from utils import generate_blockchain, deserialize_public_key, save_accounts_and_wallets
 import fire
+import base64
 
 app = Flask(__name__)
 blockchain: BlockChain = None
@@ -33,7 +34,7 @@ def add_new_transaction():
         sender: str = str(data['sender'])
         receiver: str = str(data['receiver'])
         amount: int = int(data['amount'])
-        signature: bytes = bytes(data['signature'], encoding='utf-8')
+        signature: bytes = base64.b64decode(data['signature'])
         txn = Transaction(
             deserialize_public_key(sender),
             deserialize_public_key(receiver),
