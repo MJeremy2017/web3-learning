@@ -227,12 +227,6 @@ class BlockChain:
     """
     1. save/add the pending transactions
     2. add and validate a new block
-
-    Q:
-    1. how to broadcast to other nodes?
-    Hardcoded Seed Nodes: Bitcoin Core, the reference implementation of Bitcoin,
-    includes a list of hardcoded seed nodes.
-    These are known, reputable nodes that can help bootstrap a new node's connection to the network.
     """
 
     def __init__(self, chain: List[Block], reward: int, difficulty: int, peers: List[Tuple] = None):

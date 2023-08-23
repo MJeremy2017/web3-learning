@@ -24,7 +24,20 @@ def chain_info():
 
 @app.route('/blockchain/mine', methods=['GET'])
 def mine():
-    pass
+    data = request.get_json()
+    miner_addr_str = data['miner_addr']
+    miner_addr = deserialize_public_key(miner_addr_str)
+    try:
+        blockchain.mine(miner_addr)
+        block_hash = blockchain.chain[-1].block_hash
+        return jsonify({'message': {
+            'status': 'success',
+            'block_hash': block_hash
+        }}), 200
+    except Exception as e:
+        return jsonify({
+            'err': str(e)
+        }), 500
 
 
 @app.route('/transaction/new', methods=['POST'])
@@ -51,10 +64,11 @@ def add_new_transaction():
         return jsonify({'error': f'Internal server error {e}'}), 500
 
 
-def main(port=5000, peer=5001, reward=10, difficulty=1):
+def main(port=5000, peer=None, reward=10, difficulty=1):
     global blockchain
     blockchain, accounts, wallets = generate_blockchain(3, 5, 3, reward=reward, difficulty=difficulty)
-    blockchain.add_peer(('http://localhost', peer))
+    if peer:
+        blockchain.add_peer(('http://localhost', peer))
 
     save_accounts_and_wallets(accounts, wallets)
     print('chain info:', blockchain.difficulty, blockchain.peers)

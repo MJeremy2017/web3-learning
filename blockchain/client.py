@@ -1,5 +1,5 @@
 from utils import unpickle_wallets, unpickle_accounts, generate_signed_transaction
-from client_utils import add_transaction
+from client_utils import add_transaction, mine_block
 import random
 
 HOST = 'http://localhost'
@@ -22,3 +22,9 @@ if __name__ == '__main__':
         receiver=str(txn.to_addr),
         signature=txn.signature,
         amount=txn.amount)
+
+    mine_block(
+        host=HOST,
+        port=PORT,
+        miner=str(txn.from_addr)
+    )
