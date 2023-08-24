@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from cryptography.exceptions import InvalidSignature
 import logging
 import time
