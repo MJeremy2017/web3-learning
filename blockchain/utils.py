@@ -1,5 +1,5 @@
-from blockchain_impl import Block, Transaction, Wallet
-from blockchain_impl import BlockChain, GenesisPublicKey, PublicKey, PrivateKey
+from blockchain_impl import Block, Transaction, Wallet, BlockChain
+from custom_types import GenesisPublicKey, PublicKey, PrivateKey
 from cryptography.hazmat.primitives import serialization
 import random
 from typing import List
