@@ -1,7 +1,8 @@
 import random
 from unittest import TestCase
 from typing import List
-from blockchain_impl import Block, Transaction, Wallet, verify, verify_transaction_has_sufficient_funds
+from blockchain_impl import Block, verify, verify_transaction_has_sufficient_funds
+from custom_types import Wallet
 import secrets
 from exceptions import *
 from utils import generate_signed_transaction, generate_blockchain

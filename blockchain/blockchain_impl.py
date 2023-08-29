@@ -5,54 +5,14 @@ import time
 from typing import List, Union, Tuple
 from custom_types import Transaction, Wallet
 import hashlib
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric import padding
 from custom_types import PublicKey, GenesisPublicKey
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from exceptions import *
 from client_utils import add_transaction
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def hash_block(
-        prev_hash: str,
-        transactions: List[Transaction],
-        coinbase_transaction: Transaction,
-        nonce: int) -> str:
-    encode_str = prev_hash
-    for txn in transactions + [coinbase_transaction]:
-        encode_str += str(txn)
-    encode_str += str(nonce)
-    encode_str = encode_str.encode()
-    return hashlib.sha256(encode_str).hexdigest()
-
-
-def verify_transaction_has_sufficient_funds(block: Block, txn: Transaction):
-    from_addr = txn.from_addr
-    amount = txn.amount
-    balance = 0
-    transactions = block.transactions
-
-    i = 0
-    # transactions are already sorted
-    while transactions[i] != txn:
-        if transactions[i].from_addr == from_addr:
-            balance -= transactions[i].amount
-        if transactions[i].to_addr == from_addr:
-            balance += transactions[i].amount
-        i += 1
-
-    node: Block = block.prev_block
-    while node:
-        for txn in node.transactions:
-            if txn.from_addr == from_addr:
-                balance -= txn.amount
-            if txn.to_addr == from_addr:
-                balance += txn.amount
-        node = node.prev_block
-    if balance < amount:
-        raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
 
 class Block:
@@ -252,6 +212,46 @@ def verify(public_key: PublicKey, transaction: Transaction) -> bool:
         return True
     except InvalidSignature:
         return False
+
+
+def hash_block(
+        prev_hash: str,
+        transactions: List[Transaction],
+        coinbase_transaction: Transaction,
+        nonce: int) -> str:
+    encode_str = prev_hash
+    for txn in transactions + [coinbase_transaction]:
+        encode_str += str(txn)
+    encode_str += str(nonce)
+    encode_str = encode_str.encode()
+    return hashlib.sha256(encode_str).hexdigest()
+
+
+def verify_transaction_has_sufficient_funds(block: Block, txn: Transaction):
+    from_addr = txn.from_addr
+    amount = txn.amount
+    balance = 0
+    transactions = block.transactions
+
+    i = 0
+    # transactions are already sorted
+    while transactions[i] != txn:
+        if transactions[i].from_addr == from_addr:
+            balance -= transactions[i].amount
+        if transactions[i].to_addr == from_addr:
+            balance += transactions[i].amount
+        i += 1
+
+    node: Block = block.prev_block
+    while node:
+        for txn in node.transactions:
+            if txn.from_addr == from_addr:
+                balance -= txn.amount
+            if txn.to_addr == from_addr:
+                balance += txn.amount
+        node = node.prev_block
+    if balance < amount:
+        raise InsufficientFundsException(f"transfer amount {amount}, got balance {balance}")
 
 
 if __name__ == '__main__':
