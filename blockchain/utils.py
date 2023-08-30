@@ -4,7 +4,29 @@ from cryptography.hazmat.primitives import serialization
 import random
 from typing import List
 import pickle
+import secrets
 import time
+
+
+def generate_random_hash():
+    return secrets.token_hex(20)
+
+
+def generate_random_transactions(n_users: int, n_txn: int):
+    wallets: List[Wallet] = []
+    for _ in range(n_users):
+        w = Wallet()
+        wallets.append(w)
+    results = []
+    for i in range(n_txn):
+        i = j = 0
+        while i != j:
+            i, j = random.randint(0, n_users - 1), random.randint(0, n_users - 1)
+        fr = wallets[i]
+        to = wallets[j]
+        signed_txn = generate_signed_transaction(fr, to)
+        results.append(signed_txn)
+    return results
 
 
 def generate_signed_transaction(wa: Wallet, wb: Wallet, amount: int = 0, ts=None) -> Transaction:

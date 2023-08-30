@@ -1,32 +1,9 @@
 import random
 from unittest import TestCase
-from typing import List
 from blockchain_impl import Block, verify, verify_transaction_has_sufficient_funds
 from custom_types import Wallet
-import secrets
 from exceptions import *
-from utils import generate_signed_transaction, generate_blockchain
-
-
-def generate_random_hash():
-    return secrets.token_hex(20)
-
-
-def generate_random_transactions(n_users: int, n_txn: int):
-    wallets: List[Wallet] = []
-    for _ in range(n_users):
-        w = Wallet()
-        wallets.append(w)
-    results = []
-    for i in range(n_txn):
-        i = j = 0
-        while i != j:
-            i, j = random.randint(0, n_users - 1), random.randint(0, n_users - 1)
-        fr = wallets[i]
-        to = wallets[j]
-        signed_txn = generate_signed_transaction(fr, to)
-        results.append(signed_txn)
-    return results
+from utils import generate_signed_transaction, generate_blockchain, generate_random_hash
 
 
 class TestWallet(TestCase):
