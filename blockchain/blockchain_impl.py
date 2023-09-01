@@ -175,7 +175,8 @@ class BlockChain:
         self.verify_signature(txn)
         verify_transaction_has_sufficient_funds(block, txn)
 
-    def verify_signature(self, txn: Transaction):
+    @staticmethod
+    def verify_signature(txn: Transaction):
         public_key: PublicKey = txn.from_addr
         is_valid_txn = verify(public_key, txn)
         if not is_valid_txn:
